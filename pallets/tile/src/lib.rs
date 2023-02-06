@@ -51,16 +51,16 @@ pub mod pallet {
 	/// Storage for all tiles keyed by tile's ID
 	#[pallet::storage]
 	#[pallet::getter(fn tile)]
-	pub type Tiles<T: Config> = StorageMap<_, Blake2_128Concat, T::Hash, Tile<T>, OptionQuery>;
+	pub type Tiles<T: Config> = StorageMap<_, Identity, T::Hash, Tile<T>, OptionQuery>;
 
 	/// Storage for legislators chosen in given tile
 	#[pallet::storage]
 	#[pallet::getter(fn legislator)]
 	pub type Legislators<T: Config> = StorageDoubleMap<
 		_,
-		Blake2_128Concat,
+		Identity,
 		T::Hash,
-		Blake2_128Concat,
+		Identity,
 		T::AccountId,
 		(),
 		OptionQuery,

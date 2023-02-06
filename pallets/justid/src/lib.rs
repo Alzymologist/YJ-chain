@@ -15,15 +15,12 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-/// Identity's standing within a tile
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct Rating {
-    /// normal rating
-    civil: u32,
-    /// how well individual judges
-    judical: u32,
-    /// how well individual reports violations
-    police: u32,
+#[scale_info(skip_type_params(T))]
+pub enum Opinion {
+    Neutral,
+    Endorse,
+    Grudge,
 }
 
 #[frame_support::pallet]
@@ -45,16 +42,39 @@ pub mod pallet {
 	}
 
         /// Storage for membership information
+        /// keys:
+        /// [Tile ID, User ID]
 	#[pallet::storage]
 	#[pallet::getter(fn something)]
-        pub type Ratings<T: Config> = StorageDoubleMap<
+        pub type Memberships<T: Config> = StorageDoubleMap<
             _,
-            Blake2_128Concat,
+            Identity,
             T::Hash,
-            Blake2_128Concat,
+            Identity,
             T::AccountId,
-            Rating,
+            (),
             OptionQuery,
+        >;
+
+        #[pallet::type_value]
+        pub fn DefaultOpinion() -> Opinion { Opinion::Neutral }
+
+        /// Storage for inte-user relations
+        /// keys:
+        /// [Tile ID, Who stated opinion, About whom]
+        /// value:
+        /// Opinion struct with 3 states, for simplicity
+        #[pallet::storage]
+        pub type PeerOpinion<T: Config> = StorageNMap<
+            _,
+            (
+                NMapKey<Identity, T::Hash>,
+                NMapKey<Identity, T::AccountId>,
+                NMapKey<Identity, T::AccountId>,
+            ),
+            Opinion,
+            ValueQuery,
+            DefaultOpinion,
         >;
 
 	// Pallets use events to inform users when important changes are made.
@@ -83,8 +103,32 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-	/// Create a tile entity
+        	/// Join a tile
 		#[pallet::call_index(0)]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn join(
+			origin: OriginFor<T>,
+			tile_id: T::Hash,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+                        // TODO: ensure tile exists and accepts neophites
+			//ensure!(!Tiles::<T>::contains_key(tile_id), Error::<T>::DuplicateTile);
+
+
+                        ensure!(!Memberships::<T>::contains_key(tile_id, &who), Error::<T>::AlreadyMember);
+
+			// Join tile
+		        Memberships::<T>::insert(tile_id, who, ());
+
+			// Emit an event.
+			// Self::deposit_event(Event::SomethingStored { something, who });
+			// Return a successful DispatchResultWithPostInfo
+			Ok(())
+		}
+
+                /*
+		#[pallet::call_index(1)]
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn join(
 			origin: OriginFor<T>,
@@ -105,7 +149,6 @@ pub mod pallet {
 			// Return a successful DispatchResultWithPostInfo
 			Ok(())
 		}
-	
-		
+*/
 	}
 }
