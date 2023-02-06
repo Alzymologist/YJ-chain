@@ -3,6 +3,8 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{inherent::Vec, parameter_types, sp_runtime::RuntimeDebug, BoundedVec};
 use scale_info::TypeInfo;
+use frame_system::Config as SystemConfig;
+use sp_runtime::traits::StaticLookup;
 
 pub use pallet::*;
 
@@ -14,6 +16,8 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+
+type AccountIdLookupOf<T> = <<T as SystemConfig>::Lookup as StaticLookup>::Source;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
@@ -96,6 +100,10 @@ pub mod pallet {
 		StorageOverflow,
                 /// Individual tried to join tile twice
                 AlreadyMember,
+                /// Individual tried to act as tile member while not being one
+                YouAreNotMember,
+                /// Individual tried to interact with their tile non-member as with member
+                OtherIsNotMember,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -127,28 +135,81 @@ pub mod pallet {
 			Ok(())
 		}
 
-                /*
+                /// Give good numeric review to an actor
 		#[pallet::call_index(1)]
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn join(
+		pub fn like(
 			origin: OriginFor<T>,
 			tile_id: T::Hash,
+                        other: AccountIdLookupOf<T>
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+                        let other = T::Lookup::lookup(other)?;
 
-                        // TODO: ensure tile exists and accepts neophites
-			//ensure!(!Tiles::<T>::contains_key(tile_id), Error::<T>::DuplicateTile);
+                        // TODO: ensure tile exists - maybe redundant?
+			//ensure!(Tiles::<T>::contains_key(tile_id), Error::<T>::DuplicateTile);
 
-                        ensure!(!Ratings::<T>::contains_key(tile_id, &who), Error::<T>::AlreadyMember);
+                        ensure!(Memberships::<T>::contains_key(tile_id, &who), Error::<T>::YouAreNotMember);
+                        ensure!(Memberships::<T>::contains_key(tile_id, &other), Error::<T>::OtherIsNotMember);
 
-			// create tile
-			Ratings::<T>::insert(tile_id, who, Rating { civil: 0, judical: 0, police: 0 }); // TODO: fetch values from tile defaults
+			PeerOpinion::<T>::insert((tile_id, who, other), Opinion::Endorse);
 
 			// Emit an event.
 			// Self::deposit_event(Event::SomethingStored { something, who });
 			// Return a successful DispatchResultWithPostInfo
 			Ok(())
 		}
-*/
+
+                /// Give poor numeric review to an actor
+		#[pallet::call_index(2)]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn complain(
+			origin: OriginFor<T>,
+			tile_id: T::Hash,
+                        other: AccountIdLookupOf<T>
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+                        let other = T::Lookup::lookup(other)?;
+
+                        // TODO: ensure tile exists - maybe redundant?
+			//ensure!(Tiles::<T>::contains_key(tile_id), Error::<T>::DuplicateTile);
+
+                        ensure!(Memberships::<T>::contains_key(tile_id, &who), Error::<T>::YouAreNotMember);
+                        ensure!(Memberships::<T>::contains_key(tile_id, &other), Error::<T>::OtherIsNotMember);
+
+			PeerOpinion::<T>::insert((tile_id, who, other), Opinion::Grudge);
+
+			// Emit an event.
+			// Self::deposit_event(Event::SomethingStored { something, who });
+			// Return a successful DispatchResultWithPostInfo
+			Ok(())
+		}
+
+
+                /// Give neutral numeric review to an actor
+		#[pallet::call_index(3)]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn normalize(
+			origin: OriginFor<T>,
+			tile_id: T::Hash,
+                        other: AccountIdLookupOf<T>
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+                        let other = T::Lookup::lookup(other)?;
+
+                        // TODO: ensure tile exists - maybe redundant?
+			//ensure!(Tiles::<T>::contains_key(tile_id), Error::<T>::DuplicateTile);
+
+                        ensure!(Memberships::<T>::contains_key(tile_id, &who), Error::<T>::YouAreNotMember);
+                        ensure!(Memberships::<T>::contains_key(tile_id, &other), Error::<T>::OtherIsNotMember);
+
+			PeerOpinion::<T>::insert((tile_id, who, other), Opinion::Neutral);
+
+			// Emit an event.
+			// Self::deposit_event(Event::SomethingStored { something, who });
+			// Return a successful DispatchResultWithPostInfo
+			Ok(())
+		}
+
 	}
 }
