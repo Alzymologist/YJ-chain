@@ -104,6 +104,8 @@ pub mod pallet {
                 YouAreNotMember,
                 /// Individual tried to interact with their tile non-member as with member
                 OtherIsNotMember,
+                /// Attempt to self-relate
+                SelfRating,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -149,6 +151,7 @@ pub mod pallet {
                         // TODO: ensure tile exists - maybe redundant?
 			//ensure!(Tiles::<T>::contains_key(tile_id), Error::<T>::DuplicateTile);
 
+                        ensure!(who!=other, Error::<T>::SelfRating)
                         ensure!(Memberships::<T>::contains_key(tile_id, &who), Error::<T>::YouAreNotMember);
                         ensure!(Memberships::<T>::contains_key(tile_id, &other), Error::<T>::OtherIsNotMember);
 
