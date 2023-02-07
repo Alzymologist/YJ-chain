@@ -3,6 +3,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{inherent::Vec, parameter_types, sp_runtime::RuntimeDebug, BoundedVec};
 use scale_info::TypeInfo;
+use sp_std::prelude::*;
 
 pub use pallet::*;
 
@@ -27,7 +28,7 @@ pub struct Tile<T: Config> {
 	/// Hash for current set of laws in YJML format
 	codex: T::Hash,
 	/// Parent tile that imposes legal inheritance
-	parent: Option<T::Hash>,
+	parent: Option<sp_core::H256>,
         // TODO: add treasury/lock deposit
 }
 
@@ -48,10 +49,13 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
+        #[pallet::storage]
+        pub type NextTileId<T: Config> = StorageValue<_, u64, ValueQuery>;
+
 	/// Storage for all tiles keyed by tile's ID
 	#[pallet::storage]
 	#[pallet::getter(fn tile)]
-	pub type Tiles<T: Config> = StorageMap<_, Identity, T::Hash, Tile<T>, OptionQuery>;
+	pub type Tiles<T: Config> = StorageMap<_, Identity, sp_core::H256, Tile<T>, OptionQuery>;
 
 	/// Storage for legislators chosen in given tile
 	#[pallet::storage]
@@ -59,7 +63,7 @@ pub mod pallet {
 	pub type Legislators<T: Config> = StorageDoubleMap<
 		_,
 		Identity,
-		T::Hash,
+                sp_core::H256,
 		Identity,
 		T::AccountId,
 		(),
@@ -75,7 +79,7 @@ pub mod pallet {
 		/// parameters. [something, who]
 		SomethingStored { something: u32, who: T::AccountId },
                 /// Successful creation of new tile with [id]
-                NewTileDeclared { id: T::Hash },
+                NewTileDeclared { id: sp_core::H256 },
 	}
 
 	// Errors inform users that something went wrong.
@@ -101,14 +105,15 @@ pub mod pallet {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn new_tile(
 			origin: OriginFor<T>,
-			tile_id: T::Hash,
-			tile_parent: Option<T::Hash>,
+			tile_parent: Option<sp_core::H256>,
 			codex: T::Hash,
 		) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/main-docs/build/origins/
 			let who = ensure_signed(origin)?;
+                        let tile_id_number = NextTileId::<T>::get();
+                        let tile_id = sp_core::H256::from(sp_io::hashing::blake2_256(&tile_id_number.to_be_bytes()));
 
 			ensure!(!Tiles::<T>::contains_key(tile_id), Error::<T>::DuplicateTile);
 
@@ -121,6 +126,8 @@ pub mod pallet {
 
 			// add author as rulemaker
 			Legislators::<T>::insert(tile_id, who, ());
+
+                        NextTileId::<T>::set(tile_id_number + 1);
 
 			// Emit an event.
 			Self::deposit_event(Event::NewTileDeclared { id: tile_id });
