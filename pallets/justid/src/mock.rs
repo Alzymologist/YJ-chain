@@ -1,7 +1,7 @@
 use crate as pallet_justid;
 use frame_support::traits::{ConstU16, ConstU64};
-use pallet_tile;
 use frame_system as system;
+use pallet_tile;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -19,7 +19,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
-                Tile: pallet_tile,
+				Tile: pallet_tile,
 		Identity: pallet_justid,
 	}
 );
@@ -57,7 +57,7 @@ impl pallet_tile::Config for Test {
 
 impl pallet_justid::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
-        type Tile = pallet_tile::Tile<Test>; 
+	type Tile = pallet_tile::Tile<Test>;
 }
 
 // Build genesis storage according to the mock runtime.

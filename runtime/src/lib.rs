@@ -282,7 +282,7 @@ impl pallet_court::Config for Runtime {
 
 impl pallet_justid::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-        type Tile = pallet_tile::Tile<Self>;
+	type Tile = pallet_tile::Tile<Self>;
 }
 
 impl pallet_tile::Config for Runtime {

@@ -29,7 +29,7 @@ pub struct Tile<T: Config> {
 	codex: T::Hash,
 	/// Parent tile that imposes legal inheritance
 	parent: Option<sp_core::H256>,
-        // TODO: add treasury/lock deposit
+	// TODO: add treasury/lock deposit
 }
 
 #[frame_support::pallet]
@@ -49,8 +49,8 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
-        #[pallet::storage]
-        pub type NextTileId<T: Config> = StorageValue<_, u64, ValueQuery>;
+	#[pallet::storage]
+	pub type NextTileId<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	/// Storage for all tiles keyed by tile's ID
 	#[pallet::storage]
@@ -60,15 +60,8 @@ pub mod pallet {
 	/// Storage for legislators chosen in given tile
 	#[pallet::storage]
 	#[pallet::getter(fn legislator)]
-	pub type Legislators<T: Config> = StorageDoubleMap<
-		_,
-		Identity,
-                sp_core::H256,
-		Identity,
-		T::AccountId,
-		(),
-		OptionQuery,
-	>;
+	pub type Legislators<T: Config> =
+		StorageDoubleMap<_, Identity, sp_core::H256, Identity, T::AccountId, (), OptionQuery>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/main-docs/build/events-errors/
@@ -78,8 +71,8 @@ pub mod pallet {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
 		SomethingStored { something: u32, who: T::AccountId },
-                /// Successful creation of new tile with [id]
-                NewTileDeclared { id: sp_core::H256 },
+		/// Successful creation of new tile with [id]
+		NewTileDeclared { id: sp_core::H256 },
 	}
 
 	// Errors inform users that something went wrong.
@@ -112,8 +105,9 @@ pub mod pallet {
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/main-docs/build/origins/
 			let who = ensure_signed(origin)?;
-                        let tile_id_number = NextTileId::<T>::get();
-                        let tile_id = sp_core::H256::from(sp_io::hashing::blake2_256(&tile_id_number.to_be_bytes()));
+			let tile_id_number = NextTileId::<T>::get();
+			let tile_id =
+				sp_core::H256::from(sp_io::hashing::blake2_256(&tile_id_number.to_be_bytes()));
 
 			ensure!(!Tiles::<T>::contains_key(tile_id), Error::<T>::DuplicateTile);
 
@@ -127,7 +121,7 @@ pub mod pallet {
 			// add author as rulemaker
 			Legislators::<T>::insert(tile_id, who, ());
 
-                        NextTileId::<T>::set(tile_id_number + 1);
+			NextTileId::<T>::set(tile_id_number + 1);
 
 			// Emit an event.
 			Self::deposit_event(Event::NewTileDeclared { id: tile_id });
