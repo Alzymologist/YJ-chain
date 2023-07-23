@@ -146,7 +146,7 @@ pub mod pallet {
 			ensure!(Memberships::<T>::contains_key(tile_id, &who), Error::<T>::YouAreNotMember);
 			ensure!(Memberships::<T>::contains_key(tile_id, &other), Error::<T>::OtherIsNotMember);
 
-			PeerOpinion::<T>::insert((tile_id, other, who), Opinion::Endorse);
+			PeerOpinion::<T>::set((tile_id, other, who), Opinion::Endorse);
 
 			// Emit an event.
 			// Self::deposit_event(Event::SomethingStored { something, who });
@@ -171,7 +171,7 @@ pub mod pallet {
 			ensure!(Memberships::<T>::contains_key(tile_id, &who), Error::<T>::YouAreNotMember);
 			ensure!(Memberships::<T>::contains_key(tile_id, &other), Error::<T>::OtherIsNotMember);
 
-			PeerOpinion::<T>::insert((tile_id, who, other), Opinion::Grudge);
+			PeerOpinion::<T>::set((tile_id, other, who), Opinion::Grudge);
 
 			// Emit an event.
 			// Self::deposit_event(Event::SomethingStored { something, who });
@@ -196,7 +196,7 @@ pub mod pallet {
 			ensure!(Memberships::<T>::contains_key(tile_id, &who), Error::<T>::YouAreNotMember);
 			ensure!(Memberships::<T>::contains_key(tile_id, &other), Error::<T>::OtherIsNotMember);
 
-			PeerOpinion::<T>::insert((tile_id, who, other), Opinion::Neutral);
+			PeerOpinion::<T>::set((tile_id, other, who), Opinion::Neutral);
 
 			// Emit an event.
 			// Self::deposit_event(Event::SomethingStored { something, who });
